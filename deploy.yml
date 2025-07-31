@@ -1,0 +1,26 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ secrets.GCP_PROJECT }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+
+    - name: Deploy User Service
+      run: |
+        gcloud run deploy user-service           --source ./user-service           --region ${{ secrets.GCP_REGION }}           --platform managed           --allow-unauthenticated           --set-env-vars DB_HOST=${{ secrets.DB_HOST }},DB_USER=${{ secrets.DB_USER }},DB_PASS=${{ secrets.DB_PASS }},DB_NAME=${{ secrets.DB_NAME }}
+
+    - name: Deploy API Gateway
+      run: |
+        gcloud run deploy api-gateway           --source ./api-gateway           --region ${{ secrets.GCP_REGION }}           --platform managed           --allow-unauthenticated           --set-env-vars USER_SERVICE_URL=${{ secrets.USER_SERVICE_URL }}
